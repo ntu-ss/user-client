@@ -1,21 +1,17 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
-package my.clientgui;
+package user.client;
 
-/**
- *
- * @author N0792395
- */
+import java.io.IOException;
+
 public class ClientUI extends javax.swing.JFrame {
 
+    private UserClient client;
+    
     /**
      * Creates new form ClientUI
      */
     public ClientUI() {
         initComponents();
+        initialiseClient();
     }
 
     /**
@@ -123,11 +119,15 @@ public class ClientUI extends javax.swing.JFrame {
     }//GEN-LAST:event_jToggleButton2ActionPerformed
 
     private void jToggleButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jToggleButton1ActionPerformed
-        String Username, Password;
-        
-        Username = jTextField1.getText();
-        Password = String.valueOf(jPasswordField1.getPassword());
-        
+        String username = jTextField1.getText();
+        String password = String.valueOf(jPasswordField1.getPassword());
+        try {
+            client.authenticate(username, password);
+        } catch (ClassNotFoundException ex) {
+            System.out.println("Shared utilities import error.");
+        } catch (IOException ex) {
+            System.out.println("Error in sending authentication message to server.");
+        }
     }//GEN-LAST:event_jToggleButton1ActionPerformed
 
     /**
@@ -160,7 +160,8 @@ public class ClientUI extends javax.swing.JFrame {
         /* Create and display the form */
         java.awt.EventQueue.invokeLater(new Runnable() {
             public void run() {
-                new ClientUI().setVisible(true);
+                ClientUI clientUI = new ClientUI();
+                clientUI.setVisible(true);
             }
         });
     }
@@ -174,4 +175,16 @@ public class ClientUI extends javax.swing.JFrame {
     private javax.swing.JToggleButton jToggleButton1;
     private javax.swing.JToggleButton jToggleButton2;
     // End of variables declaration//GEN-END:variables
+
+    private void initialiseClient() {
+        String IP = "127.0.0.1";
+        int port = 8080;
+        try {
+            client = new UserClient(IP, port);
+        } 
+        catch (IOException e) {
+            System.out.println("Unable to connect to server at " + IP + ":" + port);
+            System.exit(1);
+        }
+    }
 }

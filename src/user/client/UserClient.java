@@ -1,29 +1,23 @@
 package user.client;
 
 import java.io.IOException;
-import static java.lang.Integer.parseInt;
+import java.io.InputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.OutputStream;
 import java.net.Socket;
+
+import shared.utilities.UserAuthenticationMessage;
+import shared.utilities.AuthenticationResponseMessage;
 
 /**
  * Provides a user interface for monitoring weather station data. 
  */
 public class UserClient {
-
-    /**
-     * Entry point for the user client program.
-     * 
-     * Parses an IP address and port from the command line arguments and
-     * runs the client.
-     * 
-     * @param args
-     * @throws IOException 
-     */
-    public static void main(String[] args) throws IOException {
-        String IP = args[0];
-        int port = parseInt(args[1]);
-        UserClient client = new UserClient();
-        client.run(IP, port);
-    }
+    
+    private final Socket server;
+    private final ObjectOutputStream oos;
+    private final ObjectInputStream ois;
 
     /**
      * Connects to the server at the specified IP address and port.
@@ -32,9 +26,60 @@ public class UserClient {
      * @param port
      * @throws IOException 
      */
-    private void run(String IP, int port) throws IOException {
-        Socket server = new Socket(IP, port);
+    public UserClient(String IP, int port) throws IOException {
+        server = new Socket(IP, port);
+        OutputStream outputStream = server.getOutputStream();
+        oos = new ObjectOutputStream(outputStream);
+        InputStream inputStream = server.getInputStream();
+        ois = new ObjectInputStream(inputStream);
         System.out.println("Connected to server at " + server.getInetAddress());
+    }
+
+    /**
+     * Sends an authentication message to the server and gets a response back.
+     * 
+     * @param username
+     * @param password
+     * @throws ClassNotFoundException
+     * @throws IOException 
+     */
+    void authenticate(String username, String password) throws ClassNotFoundException, IOException {
+        sendObject(new UserAuthenticationMessage(username, password));
+        try {
+            AuthenticationResponseMessage message = (AuthenticationResponseMessage)readObject();
+            if(message.isAccepted()) {
+                System.out.println("Successfully authenticated!");
+            }
+            else {
+                System.out.println("Authentication request denied!");
+            }
+        }
+        catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+    
+    /**
+     * Send an object to the server.
+     * 
+     * @param object
+     * @throws IOException 
+     */
+    private void sendObject(Object object) throws IOException {
+        oos.writeObject(object);
+        oos.flush();
+    }
+    
+    /**
+     * Reads an object from the server.
+     * 
+     * @return Object
+     * @throws IOException
+     * @throws ClassNotFoundException 
+     */
+    private Object readObject() throws IOException, ClassNotFoundException {
+        Object object = ois.readObject();
+        return object;
     }
     
 }
